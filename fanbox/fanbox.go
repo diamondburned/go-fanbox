@@ -3,7 +3,9 @@ package fanbox
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -50,11 +52,20 @@ type ItemBase struct {
 	Status            string   `json:"status"`
 }
 
+// URL returns the direct URL to the post.
+func (i ItemBase) URL() string {
+	return fmt.Sprintf(
+		"%s/@%s/posts/%s",
+		OriginURL, url.PathEscape(i.CreatorID), i.ID,
+	)
+}
+
 type ItemType string
 
 const (
 	ItemTypeArticle ItemType = "article"
 	ItemTypeImage   ItemType = "image"
+	ItemTypeFile    ItemType = "file"
 )
 
 type ItemBody interface {
@@ -80,6 +91,8 @@ func (i *Item) UnmarshalJSON(b []byte) error {
 		bodyContainer.Body = &ArticleBody{}
 	case ItemTypeImage:
 		bodyContainer.Body = &ImageBody{}
+	case ItemTypeFile:
+		bodyContainer.Body = &FileBody{}
 	default:
 		log.Printf("Unknown item type: %q\n", i.Type) // TODO
 		return nil
@@ -98,7 +111,22 @@ type ImageBody struct {
 	Images []Image `json:"images"`
 }
 
-func (ImageBody) itemBody() {}
+func (*ImageBody) itemBody() {}
+
+type FileBody struct {
+	Files []File `json:"files"`
+	Text  string `json:"text"`
+}
+
+func (*FileBody) itemBody() {}
+
+type File struct {
+	Extension string `json:"extension"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Size      int64  `json:"size"`
+	URL       string `json:"url"`
+}
 
 type ArticleBody struct {
 	Blocks   []ArticleBodyBlock `json:"blocks"`
@@ -106,7 +134,7 @@ type ArticleBody struct {
 	// TODO: maybe EmbedMap and FileMap
 }
 
-func (ArticleBody) itemBody() {}
+func (*ArticleBody) itemBody() {}
 
 type ArticleBodyBlock struct {
 	Type    string `json:"type"`

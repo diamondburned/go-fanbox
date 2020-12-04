@@ -123,15 +123,19 @@ func (sc *SessionClient) get(url string, header http.Header) (body io.ReadCloser
 	request.Header.Set("User-Agent", UserAgent)
 	request.Header.Set("DNT", "1")
 
+	var r *http.Response
+
 	for i := -1; i < sc.Retries; i++ {
-		r, err := sc.Do(request)
+		r, err = sc.Do(request)
 		if err != nil {
 			err = errors.Wrap(err, "failed to do request")
 			continue
 		}
+		body = r.Body
 
-		if r.StatusCode < 200 || r.StatusCode > 299 {
-			b, err := ioutil.ReadAll(r.Body)
+		if true || r.StatusCode < 200 || r.StatusCode > 299 {
+			var b []byte
+			b, err = ioutil.ReadAll(body)
 			r.Body.Close()
 
 			if err != nil {
@@ -143,7 +147,7 @@ func (sc *SessionClient) get(url string, header http.Header) (body io.ReadCloser
 			continue
 		}
 
-		return r.Body, nil
+		break
 	}
 
 	return
