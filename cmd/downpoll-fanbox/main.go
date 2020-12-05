@@ -154,7 +154,15 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 			continue
 		}
 
-		dir := filepath.Join(c.DestDir, sanitizePath(item.CreatorID), sanitizePath(item.Title))
+		dir := filepath.Join(
+			c.DestDir,
+			sanitizePath(item.CreatorID),
+			fmt.Sprintf(
+				"%s: %s",
+				time.Time(item.PublishedDateTime).Format("%Y-%m-%d"),
+				sanitizePath(item.Title),
+			),
+		)
 
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return false, errors.Wrap(err, "failed to mkdir -p for item")
