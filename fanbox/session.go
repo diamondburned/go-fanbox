@@ -133,7 +133,7 @@ func (sc *SessionClient) get(url string, header http.Header) (body io.ReadCloser
 		}
 		body = r.Body
 
-		if true || r.StatusCode < 200 || r.StatusCode > 299 {
+		if r.StatusCode < 200 || r.StatusCode > 299 {
 			var b []byte
 			b, err = ioutil.ReadAll(body)
 			r.Body.Close()

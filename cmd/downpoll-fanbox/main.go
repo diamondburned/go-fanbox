@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"go/doc"
 	"io"
 	"log"
 	"math/rand"
@@ -82,13 +82,14 @@ type app struct {
 
 func (c *app) poll(fetchAll bool) (err error) {
 	var lastPage *fanbox.Page
+	var page = 0
 
 PageLoop:
-	for i := 0; i < c.MaxPageBehind; i++ {
-		log.Printf("Scanning page %d.\n", i)
+	for page < c.MaxPageBehind {
+		log.Printf("Scanning page %d.\n", page)
 
 		switch {
-		case i == 0:
+		case page == 0:
 			lastPage, err = c.session.SupportingPosts()
 
 		case lastPage.Body.NextURL != "":
@@ -100,21 +101,23 @@ PageLoop:
 		}
 
 		if err != nil {
-			return fmt.Errorf("failed to get supporting posts page %d: %w", i, err)
+			return fmt.Errorf("failed to get supporting posts page %d: %w", page, err)
 		}
 
 		lastFetched, err := c.downloadPage(lastPage)
 		if err != nil {
-			return fmt.Errorf("failed to download page %d: %w", i, err)
+			return fmt.Errorf("failed to download page %d: %w", page, err)
 		}
 
 		if !fetchAll && lastFetched {
-			log.Printf("Finished fetching up until page %d.", i)
 			break PageLoop
 		}
 
-		log.Printf("Page %d has last item unfetched or is initial fetch; continuing.", i)
+		log.Printf("Page %d has last item unfetched or is initial fetch; continuing.", page)
+		page++
 	}
+
+	log.Printf("Finished fetching up until page %d.", page)
 
 	return nil
 }
@@ -123,8 +126,6 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 	for _, item := range page.Body.Items {
 		var urls []string
 		var text string
-
-		log.Println(item.ID, item.Type)
 
 		switch body := item.Body.(type) {
 		case *fanbox.ImageBody:
@@ -146,6 +147,10 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 			}
 
 		default:
+			continue
+		}
+
+		if len(urls) == 0 {
 			continue
 		}
 
@@ -188,7 +193,7 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 			}()
 		}
 
-		text = fmt.Sprintf("%s\n\n%s", item.URL(), prettyFormat(text))
+		text = fmt.Sprintf("%s\n\n%s", item.URL(), text)
 
 		if err := writeText(dir, "info", text); err != nil {
 			log.Println("failed to write info file:", err)
@@ -247,13 +252,7 @@ func tmpFilename() string {
 	binary.LittleEndian.PutUint64(buf[0:], uint64(time.Now().UnixNano()))
 	binary.LittleEndian.PutUint32(buf[8:], rand.Uint32())
 
-	return ".tmp." + string(buf)
-}
-
-func prettyFormat(text string) string {
-	var builder strings.Builder
-	doc.ToText(&builder, text, "", "", 80)
-	return builder.String()
+	return ".tmp." + base64.RawURLEncoding.EncodeToString(buf)
 }
 
 var sanitizer = strings.NewReplacer(
