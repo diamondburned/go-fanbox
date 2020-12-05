@@ -159,7 +159,7 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 			sanitizePath(item.CreatorID),
 			fmt.Sprintf(
 				"%s: %s",
-				time.Time(item.PublishedDateTime).Format("%Y-%m-%d"),
+				time.Time(item.PublishedDateTime).Format("2006-01-02"),
 				sanitizePath(item.Title),
 			),
 		)
