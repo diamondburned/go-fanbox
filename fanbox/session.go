@@ -86,7 +86,7 @@ func NewSessionClient() *SessionClient {
 	return &SessionClient{
 		Client: &http.Client{
 			Jar:     jar,
-			Timeout: 15 * time.Second,
+			Timeout: 15 * time.Minute,
 		},
 		Retries: 0,
 	}
