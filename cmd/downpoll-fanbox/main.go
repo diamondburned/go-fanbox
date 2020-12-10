@@ -146,6 +146,22 @@ func (c *app) downloadPage(page *fanbox.Page) (lastFetched bool, err error) {
 				}
 			}
 
+		case *fanbox.ArticleBody:
+			urls = make([]string, 0, len(body.Blocks))
+			bld := strings.Builder{}
+
+			for _, block := range body.Blocks {
+				switch block.Type {
+				case "image":
+					urls = append(urls, fanbox.PostImageURL(item.ID, block.ImageID))
+					fmt.Fprintf(&bld, "<image id=\"%s\" />\n\n", block.ImageID)
+				case "p":
+					fmt.Fprintf(&bld, "%s\n\n", block.Text)
+				}
+			}
+
+			text = bld.String()
+
 		default:
 			continue
 		}

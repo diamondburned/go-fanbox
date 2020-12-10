@@ -156,3 +156,11 @@ type Image struct {
 	OriginalURL  string `json:"originalUrl"`
 	ThumbnailURL string `json:"thumbnailUrl"`
 }
+
+// PostImageURL returns the direct link to the image in JPEG format.
+func PostImageURL(postID, imageID string) string {
+	return fmt.Sprintf(
+		"https://downloads.fanbox.cc/images/post/%s/w/1200/%s.jpeg",
+		postID, imageID,
+	)
+}
